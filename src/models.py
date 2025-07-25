@@ -1,19 +1,95 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, Boolean, Column, Table, ForeignKey, Integer
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
+from sqlalchemy.orm import Mapped
+from sqlalchemy.orm import mapped_column
 
 db = SQLAlchemy()
 
+
 class User(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(
+        String(120), unique=True, nullable=False)
     password: Mapped[str] = mapped_column(nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean(), nullable=False)
-
+    favorite: Mapped["Favorite"] = relationship(back_populates="user")
 
     def serialize(self):
         return {
             "id": self.id,
             "email": self.email,
-            # do not serialize the password, its a security breach
+        }
+
+
+class Favorite(db.Model):
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True, nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    planet_id: Mapped[int] = mapped_column(ForeignKey("planet.id"))
+    character_id: Mapped[int] = mapped_column(ForeignKey("character.id"))
+    vehicle_id: Mapped[int] = mapped_column(ForeignKey("vehicle.id"))
+    user: Mapped["User"] = relationship(back_populates="favorite")
+    planet: Mapped["Planet"] = relationship(back_populates="favorite")
+    character: Mapped["Character"] = relationship(back_populates="favorite")
+    vehicle: Mapped["Vehicle"] = relationship(back_populates="favorite")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+        }
+
+
+class Planet(db.Model):
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120))
+    terrain: Mapped[str] = mapped_column(String(120))
+    climate: Mapped[str] = mapped_column(String(120))
+    diameter: Mapped[int] = mapped_column(nullable=False)
+    favorite: Mapped["Favorite"] = relationship(back_populates="planet")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "diameter": self.diameter,
+            "terrain": self.terrain,
+            "climate": self.climate,
+        }
+
+
+class Character(db.Model):
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120))
+    gender: Mapped[str] = mapped_column(String(120))
+    height: Mapped[int] = mapped_column(nullable=False)
+    mass: Mapped[int] = mapped_column(nullable=False)
+    favorite: Mapped["Favorite"] = relationship(back_populates="character")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "gender": self.gender,
+            "height": self.height,
+            "mass": self.mass,
+        }
+
+
+class Vehicle(db.Model):
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120))
+    model: Mapped[str] = mapped_column(String(120))
+    passengers: Mapped[int] = mapped_column(nullable=False)
+    length: Mapped[int] = mapped_column(nullable=False)
+    favorite: Mapped["Favorite"] = relationship(back_populates="vehicle")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "model": self.model,
+            "passengers": self.passengers,
+            "length": self.length,
         }
